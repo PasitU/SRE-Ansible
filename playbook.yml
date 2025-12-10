@@ -1,65 +1,82 @@
 - name: My first play
   hosts: localhost
+  vars:
+    vm_name: espresso-instance
+    vm_hostname: espresso-instance
+    vm_template: SRE-09-3-Template-V2
+    proxmox_node: int531-09
+    proxmox_api_host: 10.13.104.219
+    proxmox_api_user: root@pam
+    proxmox_api_password: int53109
+    proxmox_storage: local-lvm
   tasks:
-   - name: Ping my hosts
-     ansible.builtin.ping:
+    - name: Ping my hosts
+      ansible.builtin.ping:
 
-   - name: Get VM current state
-     community.proxmox.proxmox_kvm:
-       api_user: root@pam
-       api_password: int53109
-       api_host: 10.13.104.219
-       name: espresso-instance
-       node: int531-09
-       state: current
-     register: vm_info
+    - name: Get VM current state
+      community.proxmox.proxmox_kvm:
+        api_user: "{{ proxmox_api_user }}"
+        api_password: "{{ proxmox_api_password }}"
+        api_host: "{{ proxmox_api_host }}"
+        name: "{{ vm_name }}"
+        node: "{{ proxmox_node }}"
+        state: current
+      register: vm_info
+      ignore_errors: true
 
-   - name: Stop the VM if running
-     community.proxmox.proxmox_kvm:
-       api_user: root@pam
-       api_password: int53109
-       api_host: 10.13.104.219
-       name: espresso-instance
-       node: int531-09
-       state: stopped
-       force: true
-     when: vm_info.vmid is defined and vm_info.status ==  'running'
+    - name: Stop the VM if running
+      community.proxmox.proxmox_kvm:
+        api_user: "{{ proxmox_api_user }}"
+        api_password: "{{ proxmox_api_password }}"
+        api_host: "{{ proxmox_api_host }}"
+        name: "{{ vm_name }}"
+        node: "{{ proxmox_node }}"
+        state: stopped
+        force: true
+      when: vm_info.vmid is defined and vm_info.status ==  'running'
 
-   - name: Remove VM
-     community.proxmox.proxmox_kvm:
-       api_user: root@pam
-       api_password: int53109
-       api_host: 10.13.104.219
-       name: espresso-instance
-       node: int531-09
-       state: absent
-     when: vm_info.vmid is defined
+    - name: Remove VM
+      community.proxmox.proxmox_kvm:
+        api_user: "{{ proxmox_api_user }}"
+        api_password: "{{ proxmox_api_password }}"
+        api_host: "{{ proxmox_api_host }}"
+        name: "{{ vm_name }}"
+        node: "{{ proxmox_node }}"
+        state: absent
+      when: vm_info.vmid is defined
 
-   - name: Print message
-     ansible.builtin.debug:
-       msg: Hello
+    - name: Print message
+      ansible.builtin.debug:
+        msg: Hello
 
-   - name: Create VM
-     community.proxmox.proxmox_kvm:
-       api_user: root@pam
-       api_password: int53109
-       api_host: 10.13.104.219
-       clone: SRE-09-3
-       name: espresso-instance
-       node: int531-09
-       storage: local-lvm
-       format: qcow2
-       timeout: 100
-     register: new_vm
+    - name: Create VM
+      community.proxmox.proxmox_kvm:
+        api_user: "{{ proxmox_api_user }}"
+        api_password: "{{ proxmox_api_password }}"
+        api_host: "{{ proxmox_api_host }}"
+        clone: "{{ vm_template }}"
+        name: "{{ vm_name }}"
+        node: "{{ proxmox_node }}"
+        storage: local-lvm
+        format: qcow2
+        timeout: 100
+        ciuser: stove
+        cipassword: 12345678
+        ipconfig:
+          ipconfig0: "ip=10.13.104.64/24,gw=10.13.104.254"
+      register: new_vm
 
-   - name: Start VM
-     community.proxmox.proxmox_kvm:
-       api_user: root@pam
-       api_password: int53109
-       api_host: 10.13.104.219
-       vmid: "{{ new_vm.vmid }}"
-       node: int531-09
-       state: started
+    - name: Start VM
+      community.proxmox.proxmox_kvm:
+        api_user: "{{ proxmox_api_user }}"
+        api_password: "{{ proxmox_api_password }}"
+        api_host: "{{ proxmox_api_host }}"
+        vmid: "{{ new_vm.vmid }}"
+        node: int531-09
+        state: started
 
-   - debug:
-       var: vm_info
+    - debug:
+        var: vm_info
+
+    - debug:
+        var: new_vm
