@@ -1,14 +1,13 @@
-- name: My first play
+- name: Set up virtual machine on Proxmox
   hosts: localhost
   vars:
-    vm_name: espresso-instance2
-    vm_hostname: espresso-instance
-    vm_template: SRE-09-3-Template-V3
-    proxmox_node: int531-09
-    proxmox_api_host: 10.13.104.219
+    vm_name: espresso-instance # Virtual machine name
+    vm_template: SRE-09-3-Template-V3 # Name of the virtual machine template for proxmox to clone from
+    proxmox_node: int531-09 # your proxmox node
+    proxmox_api_host: 10.13.104.219 # your proxmox IP address
     proxmox_api_user: root@pam
-    proxmox_api_password: int53109
-    proxmox_storage: local-lvm
+    proxmox_api_password: int53109 # your proxmox password
+    proxmox_storage: local-lvm # storage used for hosting image, check your proxmox storage settings
   tasks:
     - name: Ping my hosts
       ansible.builtin.ping:
@@ -45,10 +44,6 @@
         state: absent
       when: vm_info.vmid is defined
 
-    - name: Print message
-      ansible.builtin.debug:
-        msg: Hello
-
     - name: Create VM
       community.proxmox.proxmox_kvm:
         api_user: "{{ proxmox_api_user }}"
@@ -74,9 +69,3 @@
         vmid: "{{ new_vm.vmid }}"
         node: int531-09
         state: started
-
-    - debug:
-        var: vm_info
-
-    - debug:
-        var: new_vm
